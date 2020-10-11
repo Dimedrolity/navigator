@@ -1,0 +1,7 @@
+{
+  "appId": "capacitor.quasar.navigator.app",
+  "appName": "Navigator",
+  "bundledWebRuntime": false,
+  "npmClient": "npm",
+  "webDir": "www"
+}
