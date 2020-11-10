@@ -15,6 +15,7 @@ import L from 'leaflet/dist/leaflet';
 import 'leaflet/dist/leaflet.css';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import mapImage from 'assets/tef_level-4.svg'
 
 let DefaultIcon = L.icon({
   iconUrl: icon,
@@ -50,14 +51,14 @@ export default {
   mounted() {
     // code from: http://kempe.net/blog/2014/06/14/leaflet-pan-zoom-image.html
 
-    const w = 2000,
-      h = 1500,
-      url = 'http://kempe.net/images/newspaper-big.jpg';
+    const w = 287*5,
+      h = 87*5,
+      url = mapImage;
 
     this.map = L.map('map', {
-      minZoom: 1,
-      maxZoom: 4,
       center: [0, 0],
+      maxZoom: 4,
+      minZoom: 1,
       zoom: 1,
       crs: L.CRS.Simple
     });
@@ -83,9 +84,9 @@ export default {
     leafletHref.parentElement.parentElement.remove();
 
     this.itemToCoordinates = {
-      1: [-50, 215],
-      2: [-78, 10],
-      3: [-100, 150],
+      1: [0, 0],
+      2: [-10, 10],
+      3: [-1*(87*5/8), 287*5/8],
     }
   },
 
