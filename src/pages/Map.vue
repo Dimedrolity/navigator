@@ -77,12 +77,11 @@ export default {
         center: [0, 0],
         maxZoom: 4,
         minZoom: 1,
-        zoom: 1,
+        zoom: 2,
         crs: L.CRS.Simple
       });
 
-      const windowHeight = window.innerHeight;
-      this.$refs['map'].style.height = windowHeight / 1.5 + 'px';
+      this.$refs['map'].style.height = window.innerHeight - 50 + 'px';
 
       const leafletHref = document.querySelector('a[href="https://leafletjs.com"]');
       leafletHref.parentElement.parentElement.remove();
@@ -133,6 +132,7 @@ export default {
   margin-bottom: 10px;
 
   z-index: 0;
+  background-color: white;
 }
 
 .input-container {
@@ -174,7 +174,6 @@ input::placeholder {
   color: white;
 }
 
-
 /* кнопки + и - */
 .leaflet-control-container {
   position: absolute;
@@ -192,16 +191,11 @@ input::placeholder {
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.65);
 }
 
-.leaflet-bar a {
+.leaflet-bar a,
+.leaflet-bar a:hover {
   background-color: #03A9F4;
   border: 1px solid rgba(0, 0, 0, .15);
   color: white;
-}
-
-.leaflet-bar a:hover {
-  background-color: white;
-  border: 1px solid rgba(0, 0, 0, .15);
-  color: #03A9F4;
 }
 
 .leaflet-bar a.leaflet-disabled {

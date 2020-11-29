@@ -1,11 +1,14 @@
-
 const routes = [
   {
     path: '/',
-    component: () => import('layouts/MainLayout.vue'),
+    component: () => import('pages/SelectBuilding.vue'),
+  },
+  {
+    path: 'map', component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/SelectBuilding.vue') },
-      { path: 'map', name: 'map',  component: () => import('pages/Map.vue'), props: true },
+      {
+        path: '', name: 'map', component: () => import('pages/Map.vue'), props: true
+      }
     ]
   },
 
