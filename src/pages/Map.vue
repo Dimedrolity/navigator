@@ -18,14 +18,17 @@
       <span class="word">этаж</span>
     </q-btn>
 
-    <q-dialog v-model="isLevelDialogOpen">
-      <q-card class="change-level_dialog">
-        <q-card-section class=" q-pb-none">
-          <div class="text-h6 text-center">Выберите этаж</div>
+    <q-dialog v-if="isLevelDialogOpen" v-model="isLevelDialogOpen">
+      <q-card class="change-level__dialog text-center bg-light-blue text-white custom-text">
+        <q-card-section class="row items-center q-pb-none">
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
         </q-card-section>
-
+        <q-card-section class="q-pb-none q-mb-xl">
+          <span>Выбери этаж</span>
+        </q-card-section>
         <q-card-section>
-          <div v-for="level in levels" @click="changeLevel(level)" class="level q-mb-sm">{{ level.level }}</div>
+          <div v-for="level in levels" @click="changeLevel(level)" class="level bg-green q-mb-md">{{ level.level }} этаж</div>
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -183,82 +186,17 @@ input::placeholder {
   opacity: 1 !important;
 }
 
-//.input {
-//  width: 100%;
-//  height: 50px;
-//
-//  padding-left: 50px;
-//
-//  border: none;
-//  border-radius: 30px;
-//
-//  background-color: $light-blue;
-//  background-image: url(../assets/marker-icon.svg);
-//  background-repeat: no-repeat;
-//  background-position-x: 12px;
-//  background-position-y: center;
-//  background-size: 35px;
-//
-//  color: white;
-//  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.35);
-//
-//  &:focus {
-//    outline: none;
-//  }
-//  &::placeholder {
-//    color: white !important;
-//  }
-//}
-
-
-
-//.change-level {
-//  display: flex;
-//  flex-direction: column;
-//  align-items: center;
-//
-//  background-color: $light-blue;
-//  color: white;
-//  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.65);
-//
-//  border: 1px solid rgba(0, 0, 0, .15);
-//  border-radius: 50%;
-//  outline: none;
-//
-//  padding: 6px 11px;
-//
-//  position: absolute;
-//  top: 50%;
-//  left: 10px;
-//
-//  z-index: 1;
-//}
-//
-//.change-level .number {
-//  font-size: 18px;
-//  line-height: 21px;
-//}
-//
-//.change-level .word {
-//  font-size: 10px;
-//  line-height: 12px;
-//}
-
-
-
 .change-level {
   position: absolute;
   top: 50%;
   left: 10px;
 }
-
 .change-level .number {
   font-size: 18px;
   line-height: 21px;
   font-weight: 500;
   text-transform: lowercase;
 }
-
 .change-level .word {
   font-size: 10px;
   line-height: 12px;
@@ -266,21 +204,23 @@ input::placeholder {
   text-transform: lowercase;
 }
 
-.change-level_dialog {
-  text-align: center;
-
+.change-level__dialog {
   width: 90%;
 }
 
-.change-level_dialog .text {
-  text-align: center !important;
-}
-.level {
+.change-level__dialog .level {
+  cursor: pointer;
   padding: 20px;
-  border: 1px solid black;
-  text-align: center;
+}
+.change-level__dialog .level:focus,
+.change-level__dialog .level:active {
+  background-color: #7EDA49 !important;
 }
 
+.custom-text {
+  font-size: 24px;
+  line-height: 28px;
+}
 
 
 /* кнопки + и - */

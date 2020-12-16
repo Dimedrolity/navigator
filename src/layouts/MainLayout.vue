@@ -2,7 +2,7 @@
   <q-layout view="lHh Lpr lFf">
 
     <q-header elevated>
-      <q-toolbar>
+      <q-toolbar class="bg-light-blue">
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="leftDrawerOpen = !leftDrawerOpen"/>
 
         <q-toolbar-title>
