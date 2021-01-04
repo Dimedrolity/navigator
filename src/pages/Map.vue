@@ -40,11 +40,9 @@
 import L from 'leaflet/dist/leaflet';
 import 'leaflet/dist/leaflet.css';
 import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
 let DefaultIcon = L.icon({
   iconUrl: icon,
-  shadowUrl: iconShadow,
   iconSize: [24, 36],
   iconAnchor: [12, 36]
 });
@@ -103,7 +101,29 @@ export default {
       }
       img.src = require('../assets/' + this.buildingId + '/' + this.level + '.svg');
     },
-    createMap() {
+    changeLevel(level) {
+      if (level !== this.currentLevelObject) {
+        this.currentLevelObject = level;
+        this.updateMapImage();
+        this.isLevelDialogOpen = false
+      }
+    }
+  },
+  async created() {
+    const apiUrl = 'http://194.87.232.192/navigator/api/';
+    const response = await fetch(apiUrl + 'level?buildingId=' + this.buildingId);
+    if (response.ok) {
+      this.levels = await response.json();
+      const firstLevel = this.levels.find(level => level.level === "1");
+      if (!firstLevel)
+        new Error('first level not found');
+      this.currentLevelObject = firstLevel;
+    } else {
+      alert("error: " + response.status);
+    }
+  },
+  mounted() {
+      // code from: http://kempe.net/blog/2014/06/14/leaflet-pan-zoom-image.html
       this.map = L.map('map', {
         center: [0, 0],
         maxZoom: 4,
@@ -118,46 +138,13 @@ export default {
       leafletHref.parentElement.parentElement.remove();
 
       this.updateMapImage();
-
-      //через 10 сек сменить на другой этаж
-      // const newLevel = 2;
-      // setTimeout(()=>{
-      //   this.currentLevelObject = this.levels.find(level => level.level === newLevel.toString())
-      //   this.updateMapImage();
-      //
-      // },10*1000);
-    },
-    changeLevel(level) {
-      if (level !== this.currentLevelObject) {
-        this.currentLevelObject = level;
-        this.updateMapImage();
-        this.isLevelDialogOpen = false
-      }
-    }
-  },
-
-  async mounted() {
-    // code from: http://kempe.net/blog/2014/06/14/leaflet-pan-zoom-image.html
-    const apiUrl = 'http://194.87.232.192/navigator/api/';
-    const response = await fetch(apiUrl + 'level?buildingId=' + this.buildingId);
-    if (response.ok) {
-      this.levels = await response.json();
-      const firstLevel = this.levels.find(level => level.level === "1");
-      if (!firstLevel)
-        new Error('first level not found');
-      this.currentLevelObject = firstLevel;
-
-      this.createMap();
-    } else {
-      alert("error: " + response.status);
-    }
   },
   computed: {
     locations: function () {
       return this.currentLevelObject.locations;
     },
     level: function () {
-      return this.currentLevelObject.level;
+      return this.currentLevelObject ? this.currentLevelObject.level : 1;
     },
   }
 }
