@@ -1,8 +1,8 @@
 <template>
   <q-page>
-    <div class="input-container">
-      <q-input v-model="userInput" v-on:change="handleInput" placeholder="Поиск" value="" rounded standout
-               bg-color="light-blue" class="input2">
+    <div class="top-input-container">
+      <q-input v-model="findLocationInput" v-on:change="handleInput" placeholder="Поиск" value="" rounded standout
+               bg-color="light-blue" color="white">
         <template v-slot:prepend>
           <q-avatar>
             <img src="../assets/marker-icon.svg" alt="marker">
@@ -12,8 +12,7 @@
     </div>
     <div id="map" ref="map"></div>
 
-    <q-btn v-if="this.currentLevelObject" @click="isLevelDialogOpen = true" round stack color="light-blue"
-           text-color="white" class="change-level">
+    <q-btn v-if="this.currentLevelObject" @click="isLevelDialogOpen = true" round stack class="change-level" color="light-blue" text-color="white">
       <span class="number">{{ this.currentLevelObject.level }}</span>
       <span class="word">этаж</span>
     </q-btn>
@@ -33,6 +32,24 @@
       </q-card>
     </q-dialog>
 
+    <q-btn v-if="!isRoutePanelOpen" @click="isRoutePanelOpen = true" round color="light-blue" text-color="white" class="route">
+      <q-img src="../assets/route.svg" alt="route"></q-img>
+    </q-btn>
+
+    <div v-if="isRoutePanelOpen" class="route-panel-container">
+      <div class="route-panel">
+        <q-input v-model="fromInput" placeholder="129" value="" bg-color="light-blue" color="white" class="input q-mb-md q-mr-none"/>
+
+        <q-input v-model="toInput" placeholder="105" value="" bg-color="light-blue" color="white" class="input q-mb-md"/>
+      </div>
+      <q-btn @click="makeRoute" color="grey-10" text-color="white" class="done-button">Построить маршрут</q-btn>
+
+      <q-btn @click="isRoutePanelOpen = false" class="hide-button" round color="light-blue" text-color="white">
+        <q-img src="../assets/hide-route-panel.svg" alt="route"></q-img>
+      </q-btn>
+    </div>
+
+
   </q-page>
 </template>
 
@@ -40,6 +57,7 @@
 import L from 'leaflet/dist/leaflet';
 import 'leaflet/dist/leaflet.css';
 import icon from 'leaflet/dist/images/marker-icon.png';
+import { colors } from 'quasar';
 
 let DefaultIcon = L.icon({
   iconUrl: icon,
@@ -56,7 +74,7 @@ export default {
   },
   data() {
     return {
-      userInput: null,
+      findLocationInput: null,
       map: null,
       mapWidth: null,
       mapHeight: null,
@@ -65,12 +83,15 @@ export default {
       currentLevelObject: null,
       sizeMultiplier: 5,
       leafletDivider: 8,
-      isLevelDialogOpen: false
+      isLevelDialogOpen: false,
+      isRoutePanelOpen: false,
+      fromInput: null,
+      toInput: null,
     }
   },
   methods: {
     handleInput() {
-      const location = this.locations.find(location => location.title === this.userInput);
+      const location = this.currentLevelLocations.find(location => location.title.includes(this.findLocationInput));
       if (location) {
         const y = parseInt(location.points.y1) * this.sizeMultiplier / this.leafletDivider * -1;
         const x = parseInt(location.points.x1) * this.sizeMultiplier / this.leafletDivider;
@@ -107,7 +128,38 @@ export default {
         this.updateMapImage();
         this.isLevelDialogOpen = false
       }
-    }
+    },
+    async makeRoute() {
+      const apiUrl = 'http://194.87.232.192/navigator/api/';
+
+      // TODO раскомментить, когда на бэке будет готов графовый алгоритм
+      // const locationFrom = this.allLocations.find(location => location.title.includes(this.fromInput));
+      // const locationTo = this.allLocations.find(location => location.title.includes(this.toInput));
+      // if (!locationFrom || !locationTo)
+      //   alert('некорректный ввод');
+      // const response = await fetch(apiUrl + 'path?' + 'from=' + locationFrom.id + '&to='+ locationTo.id);
+
+      const response = await fetch(apiUrl + 'path?' + 'from=2'  + '&to=3');
+
+      if (response.ok) {
+        const route = await response.json();
+        const points = route.map(routeElement => {
+          const y = parseInt(routeElement.y) * this.sizeMultiplier / this.leafletDivider * -1;
+          const x = parseInt(routeElement.x) * this.sizeMultiplier / this.leafletDivider;
+          return [y, x]
+        });
+
+        this.drawRoute(points)
+
+        this.map.setView(points[1]+ 10, points[0], this.map.getMaxZoom());
+      } else {
+        alert("error: " + response.status);
+      }
+    },
+    drawRoute(points) {
+      L.polyline(points, {color: colors.getBrand('positive')}).addTo(this.map)
+      this.map.invalidateSize();
+    },
   },
   async created() {
     const apiUrl = 'http://194.87.232.192/navigator/api/';
@@ -121,9 +173,9 @@ export default {
     } else {
       alert("error: " + response.status);
     }
+
   },
   mounted() {
-      // code from: http://kempe.net/blog/2014/06/14/leaflet-pan-zoom-image.html
       this.map = L.map('map', {
         center: [0, 0],
         maxZoom: 4,
@@ -140,11 +192,14 @@ export default {
       this.updateMapImage();
   },
   computed: {
-    locations: function () {
+    currentLevelLocations: function () {
       return this.currentLevelObject.locations;
     },
     level: function () {
       return this.currentLevelObject ? this.currentLevelObject.level : 1;
+    },
+    allLocations: function () {
+      return this.levels.map(level => level.locations).flat();
     },
   }
 }
@@ -159,7 +214,7 @@ export default {
   background-color: white;
 }
 
-.input-container {
+.top-input-container {
   width: 100%;
 
   position: absolute;
@@ -167,7 +222,9 @@ export default {
   padding: 12px 10px;
   z-index: 1;
 }
-
+input {
+    color: white !important;
+}
 input::placeholder {
   color: white !important;
   opacity: 1 !important;
@@ -175,7 +232,7 @@ input::placeholder {
 
 .change-level {
   position: absolute;
-  top: 50%;
+  top: 40%;
   left: 10px;
 }
 .change-level .number {
@@ -204,6 +261,41 @@ input::placeholder {
   background-color: #7EDA49 !important;
 }
 
+.route {
+  position: absolute;
+  bottom: 10%;
+  left: 10px;
+
+  padding: 15px;
+}
+.route-panel-container {
+  width: 100%;
+  position: absolute;
+  bottom: 0;
+
+  background-color: $light-blue;
+}
+.route-panel {
+  width: 90px;
+  margin: auto;
+  padding: 12px 0;
+}
+.route-panel .input {
+  border-bottom: 2px solid white;
+  font-size: 30px;
+}
+.route-panel-container .done-button {
+  width: 100%;
+}
+.route-panel-container .hide-button {
+  position: absolute;
+  top: -30px;
+  right: 10px;
+
+  padding: 10px;
+}
+
+
 .custom-text {
   font-size: 24px;
   line-height: 28px;
@@ -213,8 +305,8 @@ input::placeholder {
 /* кнопки + и - */
 .leaflet-control-container {
   position: absolute;
-  right: 70px;
-  top: 45%;
+  right: 60px;
+  top: 35%;
 }
 
 .leaflet-touch .leaflet-bar a {

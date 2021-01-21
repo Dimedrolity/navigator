@@ -13,7 +13,6 @@
         </header>
 
         <main>
-          <div>{{this.cur}}</div>
           <div class="row q-ma-lg" v-for="building in this.buildings"
                :key="building.id">
             <div class="col-1">
@@ -38,7 +37,6 @@ export default {
   data() {
     return {
       buildings: null,
-      cur:null
     }
   },
   methods: {},

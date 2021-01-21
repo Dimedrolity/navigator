@@ -1,6 +1,6 @@
 const routes = [
   {
-    path: '/',
+    path: '',
     component: () => import('pages/SelectBuilding.vue'),
   },
   {
