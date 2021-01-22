@@ -133,13 +133,14 @@ export default {
       const apiUrl = 'http://194.87.232.192/navigator/api/';
 
       // TODO раскомментить, когда на бэке будет готов графовый алгоритм
-      // const locationFrom = this.allLocations.find(location => location.title.includes(this.fromInput));
-      // const locationTo = this.allLocations.find(location => location.title.includes(this.toInput));
-      // if (!locationFrom || !locationTo)
-      //   alert('некорректный ввод');
-      // const response = await fetch(apiUrl + 'path?' + 'from=' + locationFrom.id + '&to='+ locationTo.id);
+      const locationFrom = this.allLocations.find(location => location.title.includes(this.fromInput));
+      const locationTo = this.allLocations.find(location => location.title.includes(this.toInput));
+      if (!locationFrom || !locationTo)
+        alert('некорректный ввод');
+      const response = await fetch(apiUrl + 'path?' + 'from=' + locationFrom.id + '&to='+ locationTo.id);
 
-      const response = await fetch(apiUrl + 'path?' + 'from=2'  + '&to=3');
+
+      // const response = await fetch(apiUrl + 'path?' + 'from=2'  + '&to=3');
 
       if (response.ok) {
         const route = await response.json();
@@ -173,7 +174,17 @@ export default {
     } else {
       alert("error: " + response.status);
     }
-
+    alert(TTS);
+    TTS
+      .speak({
+        text: 'привет, мир!',
+        locale: 'ru-RU',
+        rate: 1
+      }, function () {
+        alert('success');
+      }, function (reason) {
+        alert(reason);
+      });
   },
   mounted() {
       this.map = L.map('map', {
