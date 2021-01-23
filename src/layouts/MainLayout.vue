@@ -12,44 +12,38 @@
       </q-toolbar>
     </q-header>
 
-    <!-- атрибут no-swipe-open, чтобы нельзя было открыть свайпом -->
-    <q-drawer v-model="leftDrawerOpen" bordered content-class="bg-grey-1">
+    <q-drawer v-model="leftDrawerOpen" bordered no-swipe-open content-class="bg-light-blue q-pa-md">
+      <span class="text-white text-h5">Настройки</span>
       <q-list>
-        <q-item-label header class="text-grey-8">Essential Links</q-item-label>
-        <EssentialLink
-          v-for="link in essentialLinks"
-          :key="link.title"
-          v-bind="link"
-        />
+        <q-item>
+            <div class="row items-center text-white text-weight-regular">
+              <div class="col-9 ">
+                <span class="text-body1 wrap">Голосовой помощник</span>
+              </div>
+              <div class="col-3">
+                <q-toggle v-model="voiceMode" color="white" size="xl"/>
+              </div>
+            </div>
+        </q-item>
       </q-list>
     </q-drawer>
 
     <q-page-container>
-      <router-view/>
+      <router-view :voiceOn="voiceMode"/>
     </q-page-container>
   </q-layout>
 </template>
 
 <script>
-import EssentialLink from 'components/EssentialLink.vue'
 
-const linksData = [
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-
-];
 
 export default {
   name: 'MainLayout',
-  components: {EssentialLink},
+  components: {},
   data() {
     return {
       leftDrawerOpen: false,
-      essentialLinks: linksData
+      voiceMode: false
     }
   }
 }

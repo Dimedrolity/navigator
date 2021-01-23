@@ -71,6 +71,7 @@ export default {
   name: 'PageMap',
   props: {
     buildingId: String,
+    voiceMode: Boolean
   },
   data() {
     return {
@@ -132,18 +133,34 @@ export default {
     async makeRoute() {
       const apiUrl = 'http://194.87.232.192/navigator/api/';
 
-      // TODO раскомментить, когда на бэке будет готов графовый алгоритм
-      const locationFrom = this.allLocations.find(location => location.title.includes(this.fromInput));
-      const locationTo = this.allLocations.find(location => location.title.includes(this.toInput));
+      const locationFrom = this.allLocations.find(location => location.title
+        .includes(this.fromInput)
+        // .includes('127')
+      );
+      const locationTo = this.allLocations.find(location => location.title
+        .includes(this.toInput)
+        // .includes('111')
+      );
+
       if (!locationFrom || !locationTo)
         alert('некорректный ввод');
+
       const response = await fetch(apiUrl + 'path?' + 'from=' + locationFrom.id + '&to='+ locationTo.id);
 
-
-      // const response = await fetch(apiUrl + 'path?' + 'from=2'  + '&to=3');
-
       if (response.ok) {
-        const route = await response.json();
+        const route = await response.json()
+
+        if (this.voiceMode) {
+          const text = this.calculateTextByPoints(route)
+          TTS.speak({
+              text: text,
+              locale: 'ru-RU',
+              rate: 1
+            }, function () {}, function (reason) {
+              alert(reason);
+            });
+        }
+
         const points = route.map(routeElement => {
           const y = parseInt(routeElement.y) * this.sizeMultiplier / this.leafletDivider * -1;
           const x = parseInt(routeElement.x) * this.sizeMultiplier / this.leafletDivider;
@@ -152,15 +169,75 @@ export default {
 
         this.drawRoute(points)
 
-        this.map.setView(points[1]+ 10, points[0], this.map.getMaxZoom());
+        this.map.invalidateSize();
       } else {
         alert("error: " + response.status);
       }
     },
+    calculateTextByPoints(points) {
+      const textParts = []
+
+      if (points.length > 2) {
+        for (let i = 0; i < points.length - 2; i++) {
+          if ((points[i].x - points[i + 1].x) === 0) {
+
+            if (points[i + 1].title && points[i + 1].title.length > 1)
+              textParts.push(`пройдите прямо до аудитории ${points[i + 1].title}`)
+            else
+              textParts.push(`пройдите прямо ${Math.abs(points[i].y - points[i + 1].y)} метров`)
+
+            if ((points[i + 1].y - points[i + 2].y) === 0) {
+              const direction = this.calculateRotationDirection([points[i], points[i + 1], points[i + 2],]);
+              textParts.push(`поверните ${direction}`)
+            }
+          } else if ((points[i].y - points[i + 1].y) === 0) {
+
+            if (points[i + 1].title && points[i + 1].title.length > 1)
+              textParts.push(`пройдите прямо до аудитории ${points[i + 1].title}`)
+            else
+              textParts.push(`пройдите прямо ${Math.abs(points[i].x - points[i + 1].x)} метров`)
+
+            if ((points[i + 1].x - points[i + 2].x) === 0) {
+              const direction = this.calculateRotationDirection([points[i], points[i + 1], points[i + 2],]);
+              textParts.push(`поверните ${direction}`)
+            }
+          }
+        }
+      } else {
+        textParts.push(`пройдите прямо ${Math.abs(points[0].y - points[1].y) + Math.abs(points[0].y - points[1].y)} метров`)
+      }
+
+      return textParts.join('. ');
+    },
+
     drawRoute(points) {
       L.polyline(points, {color: colors.getBrand('positive')}).addTo(this.map)
-      this.map.invalidateSize();
     },
+    calculateRotationDirection(points){
+      const left = 'налево';
+      const right = 'направо';
+      let result;
+      let i=0;
+      if ((points[i].x - points[i+1].x) === 0) {
+        const dy = points[i+1].y - points[i].y;
+        const dx = points[i+2].x - points[i+1].x;
+        if ((dy > 0 && dx > 0) || (dy < 0 && dx < 0)) {
+          result = left;
+        } else {
+          result = right
+        }
+      } else {
+        const dx = points[i+1].x - points[i].x;
+        const dy = points[i+2].y - points[i+1].y;
+        if ((dy > 0 && dx > 0) || (dy < 0 && dx < 0)) {
+          result = right;
+        } else {
+          result = left
+        }
+      }
+
+      return result;
+    }
   },
   async created() {
     const apiUrl = 'http://194.87.232.192/navigator/api/';
@@ -174,17 +251,6 @@ export default {
     } else {
       alert("error: " + response.status);
     }
-    alert(TTS);
-    TTS
-      .speak({
-        text: 'привет, мир!',
-        locale: 'ru-RU',
-        rate: 1
-      }, function () {
-        alert('success');
-      }, function (reason) {
-        alert(reason);
-      });
   },
   mounted() {
       this.map = L.map('map', {
