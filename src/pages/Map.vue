@@ -58,6 +58,7 @@ import L from 'leaflet/dist/leaflet';
 import 'leaflet/dist/leaflet.css';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import { colors } from 'quasar';
+import {declOfNum} from 'src/utils';
 
 let DefaultIcon = L.icon({
   iconUrl: icon,
@@ -182,10 +183,12 @@ export default {
         for (let i = 0; i < points.length - 2; i++) {
           if ((points[i].x - points[i + 1].x) === 0) {
 
-            if (points[i + 1].title && points[i + 1].title.length > 1)
+            if (points[i + 1].title && points[i + 1].title.length > 1) {
               textParts.push(`пройдите прямо до аудитории ${points[i + 1].title}`)
-            else
-              textParts.push(`пройдите прямо ${Math.abs(points[i].y - points[i + 1].y)} метров`)
+            } else {
+              const count = Math.abs(points[i].y - points[i + 1].y)
+              textParts.push(`пройдите прямо ${count} ${declOfNum(count, ['метр', 'метра', 'метров'])}`)
+            }
 
             if ((points[i + 1].y - points[i + 2].y) === 0) {
               const direction = this.calculateRotationDirection([points[i], points[i + 1], points[i + 2],]);
@@ -193,10 +196,12 @@ export default {
             }
           } else if ((points[i].y - points[i + 1].y) === 0) {
 
-            if (points[i + 1].title && points[i + 1].title.length > 1)
+            if (points[i + 1].title && points[i + 1].title.length > 1) {
               textParts.push(`пройдите прямо до аудитории ${points[i + 1].title}`)
-            else
-              textParts.push(`пройдите прямо ${Math.abs(points[i].x - points[i + 1].x)} метров`)
+            } else {
+              const count = Math.abs(points[i].x - points[i + 1].x)
+              textParts.push(`пройдите прямо ${count} ${declOfNum(count, ['метр', 'метра', 'метров'])}`)
+            }
 
             if ((points[i + 1].x - points[i + 2].x) === 0) {
               const direction = this.calculateRotationDirection([points[i], points[i + 1], points[i + 2],]);
@@ -205,7 +210,8 @@ export default {
           }
         }
       } else {
-        textParts.push(`пройдите прямо ${Math.abs(points[0].y - points[1].y) + Math.abs(points[0].y - points[1].y)} метров`)
+        const count = Math.abs(points[0].y - points[1].y) + Math.abs(points[0].y - points[1].y)
+        textParts.push(`пройдите прямо ${count} ${declOfNum(count, ['метр', 'метра', 'метров'])}`)
       }
 
       return textParts.join('. ');
