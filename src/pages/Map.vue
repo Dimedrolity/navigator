@@ -84,7 +84,6 @@ export default {
       levels: null,
       currentLevelObject: null,
       sizeMultiplier: 5,
-      leafletDivider: 8,
       isLevelDialogOpen: false,
       isRoutePanelOpen: false,
       fromInput: null,
@@ -96,11 +95,9 @@ export default {
     handleInput() {
       const location = this.currentLevelLocations.find(location => location.title.includes(this.findLocationInput));
       if (location) {
-        const y = parseInt(location.points.y1) * this.sizeMultiplier / this.leafletDivider * -1;
-        const x = parseInt(location.points.x1) * this.sizeMultiplier / this.leafletDivider;
-
-        L.marker([y, x], DefaultIcon).addTo(this.map);
-        this.map.setView([y + 10, x], this.map.getMaxZoom());
+        const leafletPoint = this.convertPixelToLeafletPoint(location.points.x1, location.points.y1);
+        L.marker(leafletPoint, DefaultIcon).addTo(this.map);
+        this.map.setView([leafletPoint[0] + 10, leafletPoint[1]], this.map.getMaxZoom());
       }
     },
     updateMapImage() {
@@ -164,9 +161,7 @@ export default {
         }
 
         const points = route.map(routeElement => {
-          const y = parseInt(routeElement.y) * this.sizeMultiplier / this.leafletDivider * -1;
-          const x = parseInt(routeElement.x) * this.sizeMultiplier / this.leafletDivider;
-          return [y, x]
+          return this.convertPixelToLeafletPoint(routeElement.x, routeElement.y);
         });
 
         this.drawRoute(points)
@@ -247,6 +242,11 @@ export default {
       }
 
       return result;
+    },
+    convertPixelToLeafletPoint(x, y) {
+      const leafletDivider = 8;
+      return [parseInt(y) * this.sizeMultiplier / leafletDivider * -1,
+        parseInt(x) * this.sizeMultiplier / leafletDivider];
     }
   },
   async created() {
@@ -263,20 +263,17 @@ export default {
     }
   },
   mounted() {
-      this.map = L.map('map', {
-        center: [0, 0],
-        maxZoom: 4,
-        minZoom: 1,
-        zoom: 2,
-        crs: L.CRS.Simple
-      });
+    this.map = L.map('map', {
+      center: [0, 0],
+      maxZoom: 4,
+      minZoom: 1,
+      zoom: 2,
+      crs: L.CRS.Simple,
+      attributionControl: false,
+    });
+    this.$refs['map'].style.height = window.innerHeight - 50 + 'px';
 
-      this.$refs['map'].style.height = window.innerHeight - 50 + 'px';
-
-      const leafletHref = document.querySelector('a[href="https://leafletjs.com"]');
-      leafletHref.parentElement.parentElement.remove();
-
-      this.updateMapImage();
+    this.updateMapImage();
   },
   computed: {
     currentLevelLocations: function () {
