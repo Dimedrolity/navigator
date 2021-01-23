@@ -88,6 +88,7 @@ export default {
       isRoutePanelOpen: false,
       fromInput: null,
       toInput: null,
+      polyline: null,
     }
   },
   methods: {
@@ -211,7 +212,10 @@ export default {
     },
 
     drawRoute(points) {
-      L.polyline(points, {color: colors.getBrand('positive')}).addTo(this.map)
+      if (this.polyline)
+        this.polyline.remove(this.map)
+      this.polyline = L.polyline(points, {color: colors.getBrand('positive')})
+      this.polyline.addTo(this.map)
     },
     calculateRotationDirection(points){
       const left = 'налево';

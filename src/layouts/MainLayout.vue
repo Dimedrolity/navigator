@@ -29,7 +29,7 @@
     </q-drawer>
 
     <q-page-container>
-      <router-view :voiceOn="voiceMode"/>
+      <router-view :voiceMode="voiceMode"/>
     </q-page-container>
   </q-layout>
 </template>
