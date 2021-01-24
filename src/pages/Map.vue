@@ -176,7 +176,9 @@ export default {
           return this.convertPixelToLeafletPoint(routeElement.x, routeElement.y);
         });
 
-        this.drawRoute(points)
+        this.currentLevelObject.polylinePoints = points
+        this.removePolyline()
+        this.addPolyline(points)
 
         this.map.invalidateSize();
       } else {
@@ -223,13 +225,6 @@ export default {
 
       return textParts.join('. ');
     },
-
-    drawRoute(points) {
-      if (this.leafletPolylineObject)
-        this.leafletPolylineObject.remove(this.map)
-      this.leafletPolylineObject = L.polyline(points, {color: colors.getBrand('positive')})
-      this.leafletPolylineObject.addTo(this.map)
-    },
     calculateRotationDirection(points){
       const left = 'налево';
       const right = 'направо';
@@ -272,6 +267,16 @@ export default {
       }
       this.currentMarkersObjects = []
     },
+    addPolyline(leafletPoints) {
+      this.leafletPolylineObject = L.polyline(leafletPoints, {color: colors.getBrand('positive')})
+      this.leafletPolylineObject.addTo(this.map)
+    },
+    removePolyline() {
+      if (this.leafletPolylineObject) {
+        this.leafletPolylineObject.remove(this.map)
+        this.leafletPolylineObject = null;
+      }
+    },
   },
   async created() {
     const apiUrl = 'http://194.87.232.192/navigator/api/';
@@ -311,12 +316,15 @@ export default {
       this.updateMapImage();
 
       this.removeAllMarkers()
-
       if (val.markersPoints && val.markersPoints.length > 0) {
-        for (const markerPoint of this.currentLevelObject.markersPoints) {
+        for (const markerPoint of val.markersPoints) {
           this.addMarker(markerPoint)
         }
       }
+
+      this.removePolyline()
+      if (val.polylinePoints && val.polylinePoints.length > 0)
+        this.addPolyline(val.polylinePoints)
     },
   }
 }
