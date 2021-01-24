@@ -88,19 +88,29 @@ export default {
       isRoutePanelOpen: false,
       fromInput: null,
       toInput: null,
-      polyline: null,
+
+      leafletPolylineObject: null,
+      currentMarkersObjects: []
     }
   },
   methods: {
     findLocation() {
       const locationLevel = this.levels.find(level => level.locations
         .find(location => location.title.includes(this.findLocationInput)));
-      this.setLevel(locationLevel);
+      if (!locationLevel)
+        return
+      this.setLevel(locationLevel)
 
       const location = this.currentLevelObject.locations.find(location => location.title.includes(this.findLocationInput));
       if (location) {
         const leafletPoint = this.convertPixelToLeafletPoint(location.points.x1, location.points.y1);
-        L.marker(leafletPoint, DefaultIcon).addTo(this.map);
+
+        if (!this.currentLevelObject.markersPoints)
+          this.currentLevelObject.markersPoints = []
+        this.currentLevelObject.markersPoints.push(leafletPoint)
+
+        this.addMarker(leafletPoint)
+
         this.map.setView([leafletPoint[0] + 10, leafletPoint[1]], this.map.getMaxZoom());
       }
     },
@@ -215,10 +225,10 @@ export default {
     },
 
     drawRoute(points) {
-      if (this.polyline)
-        this.polyline.remove(this.map)
-      this.polyline = L.polyline(points, {color: colors.getBrand('positive')})
-      this.polyline.addTo(this.map)
+      if (this.leafletPolylineObject)
+        this.leafletPolylineObject.remove(this.map)
+      this.leafletPolylineObject = L.polyline(points, {color: colors.getBrand('positive')})
+      this.leafletPolylineObject.addTo(this.map)
     },
     calculateRotationDirection(points){
       const left = 'налево';
@@ -249,7 +259,19 @@ export default {
       const leafletDivider = 8;
       return [parseInt(y) * this.sizeMultiplier / leafletDivider * -1,
         parseInt(x) * this.sizeMultiplier / leafletDivider];
-    }
+    },
+
+    addMarker(leafletPoint) {
+      const marker = L.marker(leafletPoint, DefaultIcon)
+      marker.addTo(this.map)
+      this.currentMarkersObjects.push(marker)
+    },
+    removeAllMarkers() {
+      for (const marker of this.currentMarkersObjects) {
+        marker.remove(this.map)
+      }
+      this.currentMarkersObjects = []
+    },
   },
   async created() {
     const apiUrl = 'http://194.87.232.192/navigator/api/';
@@ -285,8 +307,16 @@ export default {
     },
   },
   watch: {
-    currentLevelObject: function () {
+    currentLevelObject: function (val) {
       this.updateMapImage();
+
+      this.removeAllMarkers()
+
+      if (val.markersPoints && val.markersPoints.length > 0) {
+        for (const markerPoint of this.currentLevelObject.markersPoints) {
+          this.addMarker(markerPoint)
+        }
+      }
     },
   }
 }
