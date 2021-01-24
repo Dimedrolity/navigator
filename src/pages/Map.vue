@@ -1,7 +1,7 @@
 <template>
   <q-page>
     <div class="top-input-container">
-      <q-input v-model="findLocationInput" v-on:change="handleInput" placeholder="Поиск" value="" rounded standout
+      <q-input v-model="findLocationInput" v-on:change="findLocation" placeholder="Поиск" value="" rounded standout
                bg-color="light-blue" color="white">
         <template v-slot:prepend>
           <q-avatar>
@@ -27,7 +27,7 @@
           <span>Выбери этаж</span>
         </q-card-section>
         <q-card-section>
-          <div v-for="level in levels" @click="changeLevel(level)" class="level bg-green q-mb-md">{{ level.level }} этаж</div>
+          <div v-for="level in levels" @click="setLevel(level); isLevelDialogOpen = false" class="level bg-green q-mb-md">{{ level.level }} этаж</div>
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -92,8 +92,12 @@ export default {
     }
   },
   methods: {
-    handleInput() {
-      const location = this.currentLevelLocations.find(location => location.title.includes(this.findLocationInput));
+    findLocation() {
+      const locationLevel = this.levels.find(level => level.locations
+        .find(location => location.title.includes(this.findLocationInput)));
+      this.setLevel(locationLevel);
+
+      const location = this.currentLevelObject.locations.find(location => location.title.includes(this.findLocationInput));
       if (location) {
         const leafletPoint = this.convertPixelToLeafletPoint(location.points.x1, location.points.y1);
         L.marker(leafletPoint, DefaultIcon).addTo(this.map);
@@ -122,11 +126,9 @@ export default {
       }
       img.src = require('../assets/' + this.buildingId + '/' + this.level + '.svg');
     },
-    changeLevel(level) {
-      if (level !== this.currentLevelObject) {
+    setLevel(level) {
+      if (this.currentLevelObject !== level) {
         this.currentLevelObject = level;
-        this.updateMapImage();
-        this.isLevelDialogOpen = false
       }
     },
     async makeRoute() {
@@ -254,10 +256,11 @@ export default {
     const response = await fetch(apiUrl + 'level?buildingId=' + this.buildingId);
     if (response.ok) {
       this.levels = await response.json();
+
       const firstLevel = this.levels.find(level => level.level === "1");
       if (!firstLevel)
-        new Error('first level not found');
-      this.currentLevelObject = firstLevel;
+        alert('first level not found');
+      this.setLevel(firstLevel)
     } else {
       alert("error: " + response.status);
     }
@@ -272,18 +275,18 @@ export default {
       attributionControl: false,
     });
     this.$refs['map'].style.height = window.innerHeight - 50 + 'px';
-
-    this.updateMapImage();
   },
   computed: {
-    currentLevelLocations: function () {
-      return this.currentLevelObject.locations;
-    },
     level: function () {
       return this.currentLevelObject ? this.currentLevelObject.level : 1;
     },
     allLocations: function () {
       return this.levels.map(level => level.locations).flat();
+    },
+  },
+  watch: {
+    currentLevelObject: function () {
+      this.updateMapImage();
     },
   }
 }
