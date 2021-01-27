@@ -282,7 +282,8 @@ export default {
       this.updateMarkers();
       this.updatePolyline();
       this.speakText();
-      this.zoomToPoint(val.polylinePoints[0])
+      if (val.polylinePoints && val.polylinePoints.length > 0)
+        this.zoomToPoint(val.polylinePoints[0])
     },
   }
 }
