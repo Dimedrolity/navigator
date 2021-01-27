@@ -111,7 +111,7 @@ export default {
 
         this.addMarker(leafletPoint)
 
-        this.map.setView([leafletPoint[0] + 10, leafletPoint[1]], this.map.getMaxZoom());
+        this.zoomToPoint(leafletPoint);
       }
     },
     updateMapImage() {
@@ -159,96 +159,34 @@ export default {
       const response = await fetch(apiUrl + 'path?' + 'from=' + locationFrom.id + '&to='+ locationTo.id);
 
       if (response.ok) {
-        const route = await response.json()
-
-        if (this.voiceMode) {
-          const text = this.calculateTextByPoints(route)
-          TTS.speak({
-              text: text,
-              locale: 'ru-RU',
-              rate: 1
-            }, function () {}, function (reason) {
-              alert(reason);
-            });
+        for (const level of this.levels) {
+          level.polylinePoints = null;
+          level.text = null;
         }
 
-        const points = route.map(routeElement => {
-          return this.convertPixelToLeafletPoint(routeElement.x, routeElement.y);
-        });
+        const routeObjects = await response.json()
 
-        this.currentLevelObject.polylinePoints = points
-        this.removePolyline()
-        this.addPolyline(points)
+        for (const routeObject of routeObjects) {
+          const level = this.levels.find(level => level.level === routeObject.level.toString());
+          level.polylinePoints = routeObject.path.map(pathElement => {
+            return this.convertPixelToLeafletPoint(pathElement.x, pathElement.y);
+          });
+          level.textToSpeech = routeObject.textToSpeech;
+        }
+
+        const firstLevelOfRoute = this.levels.find(level => level.level === routeObjects[0].level.toString());
+        if (this.currentLevelObject === firstLevelOfRoute) {
+          this.zoomToPoint(this.currentLevelObject.polylinePoints[0]);
+          this.updatePolyline();
+          this.speakText();
+        } else {
+          this.currentLevelObject = firstLevelOfRoute;
+        }
 
         this.map.invalidateSize();
       } else {
         alert("error: " + response.status);
       }
-    },
-    calculateTextByPoints(points) {
-      const textParts = []
-
-      if (points.length > 2) {
-        for (let i = 0; i < points.length - 2; i++) {
-          if ((points[i].x - points[i + 1].x) === 0) {
-
-            if (points[i + 1].title && points[i + 1].title.length > 1) {
-              textParts.push(`пройдите прямо до аудитории ${points[i + 1].title}`)
-            } else {
-              const count = Math.abs(points[i].y - points[i + 1].y)
-              textParts.push(`пройдите прямо ${count} ${declOfNum(count, ['метр', 'метра', 'метров'])}`)
-            }
-
-            if ((points[i + 1].y - points[i + 2].y) === 0) {
-              const direction = this.calculateRotationDirection([points[i], points[i + 1], points[i + 2],]);
-              textParts.push(`поверните ${direction}`)
-            }
-          } else if ((points[i].y - points[i + 1].y) === 0) {
-
-            if (points[i + 1].title && points[i + 1].title.length > 1) {
-              textParts.push(`пройдите прямо до аудитории ${points[i + 1].title}`)
-            } else {
-              const count = Math.abs(points[i].x - points[i + 1].x)
-              textParts.push(`пройдите прямо ${count} ${declOfNum(count, ['метр', 'метра', 'метров'])}`)
-            }
-
-            if ((points[i + 1].x - points[i + 2].x) === 0) {
-              const direction = this.calculateRotationDirection([points[i], points[i + 1], points[i + 2],]);
-              textParts.push(`поверните ${direction}`)
-            }
-          }
-        }
-      } else {
-        const count = Math.abs(points[0].y - points[1].y) + Math.abs(points[0].y - points[1].y)
-        textParts.push(`пройдите прямо ${count} ${declOfNum(count, ['метр', 'метра', 'метров'])}`)
-      }
-
-      return textParts.join('. ');
-    },
-    calculateRotationDirection(points){
-      const left = 'налево';
-      const right = 'направо';
-      let result;
-      let i=0;
-      if ((points[i].x - points[i+1].x) === 0) {
-        const dy = points[i+1].y - points[i].y;
-        const dx = points[i+2].x - points[i+1].x;
-        if ((dy > 0 && dx > 0) || (dy < 0 && dx < 0)) {
-          result = left;
-        } else {
-          result = right
-        }
-      } else {
-        const dx = points[i+1].x - points[i].x;
-        const dy = points[i+2].y - points[i+1].y;
-        if ((dy > 0 && dx > 0) || (dy < 0 && dx < 0)) {
-          result = right;
-        } else {
-          result = left
-        }
-      }
-
-      return result;
     },
     convertPixelToLeafletPoint(x, y) {
       const leafletDivider = 8;
@@ -267,6 +205,14 @@ export default {
       }
       this.currentMarkersObjects = []
     },
+    updateMarkers() {
+      this.removeAllMarkers()
+      if (this.currentLevelObject.markersPoints && this.currentLevelObject.markersPoints.length > 0) {
+        for (const markerPoint of this.currentLevelObject.markersPoints) {
+          this.addMarker(markerPoint)
+        }
+      }
+    },
     addPolyline(leafletPoints) {
       this.leafletPolylineObject = L.polyline(leafletPoints, {color: colors.getBrand('positive')})
       this.leafletPolylineObject.addTo(this.map)
@@ -277,6 +223,25 @@ export default {
         this.leafletPolylineObject = null;
       }
     },
+    updatePolyline() {
+      this.removePolyline()
+      if (this.currentLevelObject.polylinePoints && this.currentLevelObject.polylinePoints.length > 0)
+        this.addPolyline(this.currentLevelObject.polylinePoints)
+    },
+    speakText() {
+      if (this.voiceMode && this.currentLevelObject.textToSpeech && this.currentLevelObject.textToSpeech.length > 0) {
+        TTS.speak({
+          text: this.currentLevelObject.textToSpeech,
+          locale: 'ru-RU',
+          rate: 1
+        }, function () {}, function (reason) {
+          alert(reason);
+        });
+      }
+    },
+    zoomToPoint(leafletPoint) {
+      this.map.setView([leafletPoint[0] + 10, leafletPoint[1]], this.map.getMaxZoom() - 1);
+    }
   },
   async created() {
     const apiUrl = 'http://194.87.232.192/navigator/api/';
@@ -314,17 +279,10 @@ export default {
   watch: {
     currentLevelObject: function (val) {
       this.updateMapImage();
-
-      this.removeAllMarkers()
-      if (val.markersPoints && val.markersPoints.length > 0) {
-        for (const markerPoint of val.markersPoints) {
-          this.addMarker(markerPoint)
-        }
-      }
-
-      this.removePolyline()
-      if (val.polylinePoints && val.polylinePoints.length > 0)
-        this.addPolyline(val.polylinePoints)
+      this.updateMarkers();
+      this.updatePolyline();
+      this.speakText();
+      this.zoomToPoint(val.polylinePoints[0])
     },
   }
 }
