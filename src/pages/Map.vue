@@ -58,7 +58,6 @@ import L from 'leaflet/dist/leaflet';
 import 'leaflet/dist/leaflet.css';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import { colors } from 'quasar';
-import {declOfNum} from 'src/utils';
 
 let DefaultIcon = L.icon({
   iconUrl: icon,
